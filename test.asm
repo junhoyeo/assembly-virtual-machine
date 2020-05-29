@@ -1,31 +1,35 @@
-.486
-.MODEL FLAT
-.CODE
-PUBLIC _myFunc
-_myFunc PROC
-  ; Subroutine Prologue
-  push ebp     ; Save the old base pointer value.
-  mov ebp, esp ; Set the new base pointer value.
-  sub esp, 4   ; Make room for one 4-byte local variable.
-  push edi     ; Save the values of registers that the function
-  push esi     ; will modify. This function uses EDI and ESI.
-  ; (no need to save EBX, EBP, or ESP)
+;Copyright (c) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
+;
+;"hello, world" in assembly language for Linux
+;
+;to build an executable:
+;       nasm -f elf hello.asm
+;       ld -s -o hello hello.o
 
-  ; Subroutine Body
-  mov eax, [ebp+8]   ; Move value of parameter 1 into EAX
-  mov esi, [ebp+12]  ; Move value of parameter 2 into ESI
-  mov edi, [ebp+16]  ; Move value of parameter 3 into EDI
+section .text
+; Export the entry point to the ELF linker or loader.  The conventional
+; entry point is "_start". Use "ld -e foo" to override the default.
+  global _start
 
-  mov [ebp-4], edi   ; Move EDI into the local variable
-  add [ebp-4], esi   ; Add ESI into the local variable
-  add eax, [ebp-4]   ; Add the contents of the local variable
-                     ; into EAX (final result)
+section .data
+msg db  'Hello, world!', 0xa ;our dear string
+len equ $ - msg         ;length of our dear string
 
-  ; Subroutine Epilogue
-  pop esi      ; Recover register values
-  pop  edi
-  mov esp, ebp ; Deallocate local variables
-  pop ebp ; Restore the caller's base pointer value
-  ret
-_myFunc ENDP
-END
+section .text
+
+; linker puts the entry point here:
+_start:
+
+; Write the string to stdout:
+
+  mov edx, len ;message length
+  mov ecx, msg ;message to write
+  mov ebx, 1   ;file descriptor (stdout)
+  mov eax, 4   ;system call number (sys_write)
+  int 0x80    ;call kernel
+
+; Exit via the kernel:
+
+  mov ebx, 0   ;process' exit code
+  mov eax, 1   ;system call number (sys_exit)
+  int 0x80    ;call kernel - this interrupt won't return
