@@ -24,20 +24,53 @@ export namespace Tokenizer {
     private _tokenizeLines = (line: string): ILine => {
       let indent = 0;
       let isCountingIndent = true;
+      let isCountingString = false;
+      let temporaryToken = '';
+      let temporaryString = '';
       const lineWithoutComments = line.split(';')[0];
-      const tokens = lineWithoutComments
-        .split(' ')
-        .filter((token: string) => {
-          if (!token && isCountingIndent) {
-            indent += 1;
-            return false;
-          } else if (token && isCountingIndent) {
-            isCountingIndent = false;
-          } else if (!token) {
-            return false;
+      const tokens: string[] = [];
+      for (let charIndex = 0; charIndex < lineWithoutComments.length; charIndex++) {
+        const char = lineWithoutComments[charIndex].trim();
+        if (isCountingString) {
+          temporaryString += char;
+          if (char === "'") {
+            tokens.push(temporaryString);
+            isCountingString = false;
+            temporaryString = '';
           }
-          return true;
-        });
+          continue;
+        } else if (char === ',') {
+          if (temporaryToken) {
+            tokens.push(temporaryToken);
+            temporaryToken = '';
+          }
+          tokens.push(char);
+          continue;
+        }
+        if (!char && isCountingIndent) {
+          indent += 1;
+          continue;
+        } else if (char && isCountingIndent) {
+          isCountingIndent = false;
+        } else if (!char) {
+          if (temporaryToken) {
+            tokens.push(temporaryToken);
+            temporaryToken = '';
+          }
+          continue;
+        }
+        if (char === "'") {
+          if (!isCountingString) {
+            isCountingString = true;
+            temporaryString += char;
+            continue;
+          }
+        }
+        temporaryToken += char;
+      }
+      if (temporaryToken) {
+        tokens.push(temporaryToken);
+      }
       return { indent, tokens };
     };
 
