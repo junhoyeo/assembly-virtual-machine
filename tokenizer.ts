@@ -1,4 +1,10 @@
 export namespace Tokenizer {
+  enum TokenIdentifier {
+    COMMA = ',',
+    SINGLE_QUOTE = "'",
+    DOUBLE_QUOTE = '"',
+  }
+
   export interface ILine {
     indent: number;
     tokens: string[];
@@ -27,19 +33,22 @@ export namespace Tokenizer {
       let isCountingString = false;
       let temporaryToken = '';
       let temporaryString = '';
+
       const lineWithoutComments = line.split(';')[0];
       const tokens: string[] = [];
+
       for (let charIndex = 0; charIndex < lineWithoutComments.length; charIndex++) {
         const char = lineWithoutComments[charIndex].trim();
+
         if (isCountingString) {
           temporaryString += char;
-          if (char === "'") {
+          if (char === TokenIdentifier.SINGLE_QUOTE) {
             tokens.push(temporaryString);
             isCountingString = false;
             temporaryString = '';
           }
           continue;
-        } else if (char === ',') {
+        } else if (char === TokenIdentifier.COMMA) {
           if (temporaryToken) {
             tokens.push(temporaryToken);
             temporaryToken = '';
@@ -59,7 +68,7 @@ export namespace Tokenizer {
           }
           continue;
         }
-        if (char === "'") {
+        if (char === TokenIdentifier.SINGLE_QUOTE) {
           if (!isCountingString) {
             isCountingString = true;
             temporaryString += char;
