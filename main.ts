@@ -10,3 +10,4 @@ vm
   .forEach((v) => console.log(v));
 vm.initializeParser();
 vm.parse();
+vm.execute();

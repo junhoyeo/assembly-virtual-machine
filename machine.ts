@@ -1,6 +1,7 @@
 import { readFileStr } from 'https://deno.land/std/fs/mod.ts';
 import { Tokenizer } from './tokenizer.ts';
 import { Parser } from './parser.ts';
+import { Environment } from './environment.ts';
 
 interface IVirtualMachineOptions {
   verbose?: boolean;
@@ -9,13 +10,19 @@ interface IVirtualMachineOptions {
 export default class VirtualMachine {
   verbose: boolean;
   text: string = '';
+
   tokens: Tokenizer.ILine[] = [];
   tokenizer: Tokenizer.Tokenizer | undefined;
+
+  sectionGroups: Parser.ISectionGroups | undefined;
   parser: Parser.Parser | undefined;
+
+  environment: Environment.Environment;
 
   constructor(options: IVirtualMachineOptions = {}) {
     const { verbose = false } = options;
     this.verbose = verbose;
+    this.environment = new Environment.Environment(this.verbose);
   }
 
   public async readFile(filename: string): Promise<void> {
@@ -46,10 +53,19 @@ export default class VirtualMachine {
     return this.parser;
   };
 
-  public parse = () => {
+  public parse = (): Parser.ISectionGroups => {
     if (!this.parser) {
       throw new Error('VirtualMachine.parser is not initialized.');
     }
-    return this.parser.parse();
+    this.sectionGroups = this.parser.parse();
+    return this.sectionGroups;
+  };
+
+  public execute = () => {
+    if (!this.sectionGroups) {
+      throw new Error('VirtualMachine.sectionGroups is not parsed.');
+    }
+    this.environment.read(this.sectionGroups);
+    this.environment.execute();
   };
 }

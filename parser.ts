@@ -27,7 +27,6 @@ export namespace Parser {
 
     private _parseNumberIfParseable = (value: string) => {
       const parsedNumber = parseInt(value);
-      console.log('parsed', parsedNumber);
       if (isNaN(parsedNumber)) {
         return value;
       }
@@ -39,7 +38,6 @@ export namespace Parser {
 
       const sections: ISection[] = [];
       this.tokens.forEach(({ indent, tokens: [command, ...props] }) => {
-        console.log(indent, command, props);
         if (command === 'section') {
           const [sectionType] = props;
           sections[++currentSectionIndex] = {
@@ -58,7 +56,6 @@ export namespace Parser {
           })
         }
       });
-      console.log(sections);
       return sections;
     }
 
@@ -77,30 +74,20 @@ export namespace Parser {
       return groups;
     }
 
-    private _execute = (sections: ISection[]) => {
-      const groups = this._groupSectionsByType(sections);
-      groups.data.forEach((section: IToken[], index) => {
-        if (this.verbose) {
-          console.log(`[*] Executing .data section #${index + 1}`);
-        }
-        section.forEach(({ command, props }: IToken) => {
-          if (command === 'msg') {
-            const [] = props;
-          }
-          console.log({ command, props });
-        });
-      });
-      groups.text.forEach((section, index) => {
-        if (this.verbose) {
-          console.log(`[*] Executing .text section #${index + 1}`);
-        }
-        section.forEach((v: IToken) => console.log(v));
-      });
-    }
+    private _logSectionGroup = (section: IToken[]) => section.map((token) => console.log(token));
 
     public parse = () => {
       const sections = this._parseSections();
-      return this._execute(sections);
+      const groups = this._groupSectionsByType(sections);
+
+      if (this.verbose) {
+        console.log('[*] Parsed data sections:');
+        groups.data.forEach(this._logSectionGroup);
+
+        console.log('[*] Parsed text sections:');
+        groups.text.forEach(this._logSectionGroup);
+      }
+      return groups;
     };
   }
 }
