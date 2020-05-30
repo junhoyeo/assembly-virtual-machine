@@ -53,14 +53,15 @@ export namespace Environment {
             // newline check(0xA)
             this.scope[variableName] = (terminator === 10) ?
               `${trimmedString}\n` : trimmedString;
-            console.log(this.scope);
           } else if (command == 'equ') {
             // get length of variable
             if (props?.[1] === '$' && props?.[2] === '-') {
               const variableNameToGetLength = props.slice(-1)[0] as string;
               this.scope[variableName] = (this.scope[variableNameToGetLength] as string).length;
-              console.log(this.scope);
             }
+          }
+          if (this.verbose) {
+            console.log(JSON.stringify(this.scope));
           }
         });
       });
@@ -69,16 +70,18 @@ export namespace Environment {
           console.log(`[*] Executing .text section #${index + 1}`);
         }
         section.forEach(({ command, props }: Parser.IToken) => {
+          console.log('\n', command, props);
           if (command === 'mov') {
             const [destination, source] = props?.[0] as string[];
             const destinationIndex = destination as Registers;
-            console.log(destinationIndex)
-            if (typeof source === 'string') {
-              this.registers[destinationIndex] = this.scope[source];
-            } else {
-              this.registers[destinationIndex] = source as number;
+            const sourceData = typeof source === 'string' ?
+              this.scope[source] : source as number;
+
+            this.registers[destinationIndex] = sourceData;
+            if (this.verbose) {
+              console.log(`[+] Instruction`, { command, destination, source: sourceData });
+              console.log('[*] Registers:', JSON.stringify(this.registers));
             }
-            console.log(this.registers);
           }
         });
       });
