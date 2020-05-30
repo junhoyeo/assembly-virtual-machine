@@ -5,9 +5,11 @@ export namespace Tokenizer {
     DOUBLE_QUOTE = '"',
   }
 
+  export type TToken = string | string[];
+
   export interface ILine {
     indent: number;
-    tokens: any;
+    tokens: Array<TToken>;
   }
 
   export class Tokenizer {
@@ -33,11 +35,11 @@ export namespace Tokenizer {
       let isCountingString = false;
       let temporaryToken = '';
       let temporaryString = '';
-      let temporaryArguments = [];
+      let temporaryArguments: string[] = [];
       let isPreviousTokenComma = false;
 
       const lineWithoutComments = line.split(';')[0];
-      const tokens = [];
+      const tokens: Array<TToken> = [];
 
       for (let charIndex = 0; charIndex < lineWithoutComments.length; charIndex++) {
         const char = lineWithoutComments[charIndex];
@@ -49,13 +51,6 @@ export namespace Tokenizer {
             isCountingString = false;
             temporaryString = '';
           }
-          continue;
-        } else if (char === TokenIdentifier.COMMA) {
-          if (temporaryToken) {
-            temporaryArguments.push(temporaryToken);
-            temporaryToken = '';
-          }
-          isPreviousTokenComma = true;
           continue;
         }
 
@@ -91,6 +86,18 @@ export namespace Tokenizer {
             temporaryString += trimmedChar;
             continue;
           }
+        } else if (char === TokenIdentifier.COMMA) {
+          if (temporaryToken) {
+            temporaryArguments.push(temporaryToken);
+            temporaryToken = '';
+          } else {
+            const poppedToken = tokens.pop();
+            if (poppedToken && typeof poppedToken === 'string') {
+              temporaryArguments.push(poppedToken);
+            }
+          }
+          isPreviousTokenComma = true;
+          continue;
         }
         temporaryToken += trimmedChar;
       }

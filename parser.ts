@@ -1,19 +1,19 @@
 import { Tokenizer } from './tokenizer.ts';
 
 export namespace Parser {
-  export interface Token {
+  export interface IToken {
     command: string;
-    props: any[];
+    props: Array<string | number | (string | number)[]>;
   }
 
   export interface ISection {
     type: string;
-    body: any[];
+    body: IToken[];
   }
 
   export interface ISectionGroups {
-    data: any[];
-    text: any[];
+    data: Array<IToken[]>;
+    text: Array<IToken[]>;
   }
 
   export class Parser {
@@ -25,6 +25,15 @@ export namespace Parser {
       this.verbose = verbose;
     }
 
+    private _parseNumberIfParseable = (value: string) => {
+      const parsedNumber = parseInt(value);
+      console.log('parsed', parsedNumber);
+      if (isNaN(parsedNumber)) {
+        return value;
+      }
+      return parsedNumber;
+    };
+
     private _parseSections = () => {
       let currentSectionIndex = -1;
 
@@ -34,13 +43,18 @@ export namespace Parser {
         if (command === 'section') {
           const [sectionType] = props;
           sections[++currentSectionIndex] = {
-            type: sectionType,
+            type: sectionType as string,
             body: [],
           };
         } else {
           sections[currentSectionIndex].body.push({
-            command,
-            props,
+            command: command as string,
+            props: props.map((prop: Tokenizer.TToken) => {
+              if (typeof prop === 'string') {
+                return this._parseNumberIfParseable(prop);
+              }
+              return prop.map((value: string) => this._parseNumberIfParseable(value));
+            }),
           })
         }
       });
@@ -65,21 +79,22 @@ export namespace Parser {
 
     private _execute = (sections: ISection[]) => {
       const groups = this._groupSectionsByType(sections);
-      groups.data.forEach((section, index) => {
+      groups.data.forEach((section: IToken[], index) => {
         if (this.verbose) {
           console.log(`[*] Executing .data section #${index + 1}`);
         }
-        section.forEach(({ command, props }: Token) => {
+        section.forEach(({ command, props }: IToken) => {
           if (command === 'msg') {
             const [] = props;
           }
+          console.log({ command, props });
         });
       });
       groups.text.forEach((section, index) => {
         if (this.verbose) {
           console.log(`[*] Executing .text section #${index + 1}`);
         }
-        section.forEach((v: Token) => console.log(v));
+        section.forEach((v: IToken) => console.log(v));
       });
     }
 
