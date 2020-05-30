@@ -7,7 +7,7 @@ export namespace Tokenizer {
 
   export interface ILine {
     indent: number;
-    tokens: string[];
+    tokens: any;
   }
 
   export class Tokenizer {
@@ -33,12 +33,14 @@ export namespace Tokenizer {
       let isCountingString = false;
       let temporaryToken = '';
       let temporaryString = '';
+      let temporaryArguments = [];
+      let isPreviousTokenComma = false;
 
       const lineWithoutComments = line.split(';')[0];
-      const tokens: string[] = [];
+      const tokens = [];
 
       for (let charIndex = 0; charIndex < lineWithoutComments.length; charIndex++) {
-        const char = lineWithoutComments[charIndex].trim();
+        const char = lineWithoutComments[charIndex];
 
         if (isCountingString) {
           temporaryString += char;
@@ -50,32 +52,47 @@ export namespace Tokenizer {
           continue;
         } else if (char === TokenIdentifier.COMMA) {
           if (temporaryToken) {
-            tokens.push(temporaryToken);
+            temporaryArguments.push(temporaryToken);
             temporaryToken = '';
           }
-          tokens.push(char);
+          isPreviousTokenComma = true;
           continue;
         }
-        if (!char && isCountingIndent) {
+
+        const trimmedChar = char.trim();
+        if (!trimmedChar && isCountingIndent) {
+          // trim and count indent levels
           indent += 1;
           continue;
-        } else if (char && isCountingIndent) {
+        } else if (trimmedChar && isCountingIndent) {
+          // stop counting indent levels
           isCountingIndent = false;
-        } else if (!char) {
+        } else if (!trimmedChar) {
+          // end of current token
+          if (isPreviousTokenComma && temporaryToken) {
+            // collect arguments
+            if (temporaryToken) {
+              temporaryArguments.push(temporaryToken);
+              temporaryToken = '';
+            }
+            tokens.push(temporaryArguments);
+            temporaryArguments = [];
+            continue;
+          }
           if (temporaryToken) {
             tokens.push(temporaryToken);
             temporaryToken = '';
           }
           continue;
         }
-        if (char === TokenIdentifier.SINGLE_QUOTE) {
+        if (trimmedChar === TokenIdentifier.SINGLE_QUOTE) {
           if (!isCountingString) {
             isCountingString = true;
-            temporaryString += char;
+            temporaryString += trimmedChar;
             continue;
           }
         }
-        temporaryToken += char;
+        temporaryToken += trimmedChar;
       }
       if (temporaryToken) {
         tokens.push(temporaryToken);

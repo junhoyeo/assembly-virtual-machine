@@ -5,4 +5,6 @@ const vm = new VirtualMachine({
 });
 await vm.readFile('./test.asm');
 vm.initialize();
-vm.tokenize();
+vm
+  .tokenize()
+  .forEach((v) => console.log(v));
