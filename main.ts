@@ -4,7 +4,9 @@ const vm = new VirtualMachine({
   verbose: true,
 });
 await vm.readFile('./test.asm');
-vm.initialize();
+vm.initializeTokenizer();
 vm
   .tokenize()
   .forEach((v) => console.log(v));
+vm.initializeParser();
+vm.parse();
